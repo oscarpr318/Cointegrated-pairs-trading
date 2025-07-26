@@ -350,7 +350,7 @@ backtest_strategy(camlTestingDataDF,glenTestingDataDF, hedgingRatio)
 
 8. Evaluation of results
 
-The model does indeed return a positive total ROI of 18.81%, however this does not indicate future performance. Firstly, the annualized ROI is only 4.41%, which does not beat the stock market benchmark of ~10%. If our goal is to make money we could simply put it into index funds/ETF's that track the stock market and achieve a greater return with much lower risk. The negative daily and annualized Sharpe Ratio's imply that the risk-adjusted performance is very poor, and we could have achieved greater results with a risk-free asset. 
+Unfortunately, the model returns a negative ROI of -3.74%. The most likely reason for this is that the cointegration of the two stocks breaks down during the backtesting phase, which invalidates the strategy.
 
 
 9. Key Assumptions & Limitations
