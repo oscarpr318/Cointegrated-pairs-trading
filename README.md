@@ -187,11 +187,9 @@ Computes the profit and loss for all open positions based on price changes in CA
 
 P&L per position:
 
-Short trade PnL = no. of caml shares * hedging ratio * (glen original buy price - glen current buy price)
-+ no. of caml shares * (caml current buy price - caml original buy price)
+Short trade PnL = no. of caml shares * hedging ratio * (glen original buy price - glen current buy price) + no. of caml shares * (caml current buy price - caml original buy price)
 
-Long trade PnL = no. of caml shares * hedging ratio * (glen current buy price - glen original buy price)
-+ no. of caml shares * (caml original buy price - caml current buy price)
+Long trade PnL = no. of caml shares * hedging ratio * (glen current buy price - glen original buy price) + no. of caml shares * (caml original buy price - caml current buy price)
 
 
 5. Sharpe Ratio
