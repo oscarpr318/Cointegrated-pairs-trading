@@ -80,12 +80,6 @@ def regress_data(camlDataDF,glenDataDF):
     
     return hedgingRatio
 ```
-Here we are using the closing price values for each stock and using OLS regression on them. The prices for CAML have been chosen as the independent variable since that returned the greater cointegration. Looking at the parameters we get that the p-value is circa. 0.09%, far less than the 5% threshold, implying a large cointegration between the two price data. Also from the graph on the left we get a clear visual interpretation that the two prices are highly integrated and closely follow each other. The hedging ratio is what we will use as the constant for calculating the spread in the next section.
-
-
-4. Trading Logic & Position Management
-4.1 Spread Calculation
-
 ```python
 glenDataDF,camlDataDF = fetch_data()
 
@@ -101,13 +95,14 @@ hedgingRatio = regress_data(camlTraingDataDF,glenTraingDataDF)
     (-4.165654824378394, 0.0007528777047933718, 1, 1512, {'1%': -3.43468229933681, '5%': -2.8634534376843637, '10%': -2.5677886890239634}, 10580.100526631588)
     0.9085576230206013
     
-
+Here we are using the closing price values for each stock and using OLS regression on them. The prices for CAML have been chosen as the independent variable since that returned the greater cointegration. Looking at the parameters we get that the p-value is circa. 0.09%, far less than the 5% threshold, implying a large cointegration between the two price data. Also from the graph on the left we get a clear visual interpretation that the two prices are highly integrated and closely follow each other. The hedging ratio is what we will use as the constant for calculating the spread in the next section.
 
     
 ![png](Images/output_7_1.png)
     
 
-
+4. Trading Logic & Position Management
+4.1 Spread Calculation
 
 ```python
 from math import log,sqrt
