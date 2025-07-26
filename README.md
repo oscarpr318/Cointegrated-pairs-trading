@@ -104,7 +104,7 @@ hedgingRatio = regress_data(camlTraingDataDF,glenTraingDataDF)
 
 
     
-![png](output_7_1.png)
+![png](Images/output_7_1.png)
     
 
 
@@ -352,7 +352,7 @@ backtest_strategy(camlTestingDataDF,glenTestingDataDF, hedgingRatio)
 
 
     
-![png](output_16_1.png)
+![png](Images/output_16_1.png)
     
 
 8. Evaluation of results
