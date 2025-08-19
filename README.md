@@ -102,6 +102,7 @@ Here we are using the closing price values for each stock and using OLS regressi
     
 
 4. Trading Logic & Position Management
+
 4.1 Spread Calculation (utils.py)
 
 ```python
@@ -339,7 +340,7 @@ backtest_strategy(camlTestingDataDF,glenTestingDataDF, hedgingRatio)
 
 8. Evaluation of results
 
-Unfortunately, the model returns a negative ROI of -3.74%. The most likely reason for this is that the cointegration of the two stocks breaks down during the backtesting phase, which invalidates the strategy.
+Unfortunately, the model returns a negative ROI of -3.74% as of 26/07/25. The most likely reason for this is that the cointegration of the two stocks breaks down during the backtesting phase, which invalidates the strategy.
 
 
 9. Key Assumptions & Limitations
