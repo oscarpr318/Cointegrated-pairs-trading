@@ -8,7 +8,7 @@ The strategy uses historical price data of Glencore PLC (GLEN.L) and Central Asi
 It calculates a hedging ratio via linear regression, tests for cointegration, constructs a mean-reverting spread, and then uses z-score thresholds to 
 determine entry and exit points. A backtesting framework simulates trading performance, including P&L tracking and stop-loss management.
     
-2. Data Pipeline (data_loader.py)
+2. Data Pipeline (utils.py)
 
 Price data is sourced from Yahoo Finance using the yfinance library, with a historical window of 10 years of daily data (from today minus 10 years to 
 today).
@@ -42,7 +42,7 @@ This data is the basis for both training (model calibration) and testing (backte
 3. Regression & Hedge Ratio Calculation (pairs_trading.py)
 
 ```python
-from math import sqrt, log
+import pandas as pd
 import matplotlib.pyplot as plt
 import statsmodels.tsa.stattools as ts
 from sklearn.linear_model import LinearRegression
@@ -80,7 +80,7 @@ def regress_data(camlDataDF,glenDataDF):
     
     return hedgingRatio
 ```
-```python
+```python (main.py)
 glenDataDF,camlDataDF = fetch_data()
 
 noOfElements = len(glenDataDF["Close"])
@@ -102,15 +102,15 @@ Here we are using the closing price values for each stock and using OLS regressi
     
 
 4. Trading Logic & Position Management
-4.1 Spread Calculation
+4.1 Spread Calculation (utils.py)
 
 ```python
-from math import log,sqrt
+import numpy as np
 
 # A is caml B is glen
 # For each stock of caml we buy <hedgingRatio> amount of glen
 def spread(a,b,hedgingRatio):
-    return log(a)-hedgingRatio*log(b)
+    return np.log(a)-hedgingRatio*np.log(b)
 ```
 The spread between CAML and GLEN is defined as:
 
@@ -119,7 +119,7 @@ spread=ln⁡(CAML)−hedgingRatio⋅ln⁡(GLEN)
 This normalizes prices (log transformation) and adjusts for the hedge ratio.
 
 
-4.2 Exit Conditions & Stop-Loss Management
+4.2 Exit Conditions & Stop-Loss Management (pairs_trading.py)
 
 ```python
 def check_positions(positions, hedgingRatio, zScore,prev_zScore, camlTestingDataDF,glenTestingDataDF, x):
@@ -141,11 +141,7 @@ def check_positions(positions, hedgingRatio, zScore,prev_zScore, camlTestingData
 
                     p["open"] = False
 
-                if zScore >= 2.5 and zScore < 3:
-
-                    p["stop_loss"] = True
-
-                if zScore >= 3 and p["stop_loss"] == True:
+                if zScore >= 3:
 
                     p["open"] = False
 
@@ -160,12 +156,8 @@ def check_positions(positions, hedgingRatio, zScore,prev_zScore, camlTestingData
                 if zScore >= 0 and prev_zScore < 0:
 
                     p["open"] = False
-    
-                if zScore <= -2.5 and zScore > -3:
 
-                    p["stop_loss"] = True
-
-                if zScore <= -3 and p["stop_loss"] == True:
+                if zScore <= -3:
 
                     p["open"] = False
 
@@ -178,12 +170,9 @@ Short positions: Exit when z-score crosses below 0.
 
 Long positions: Exit when z-score crosses above 0.
 
-Stop-loss: Activated if z-score moves further against the position beyond ±2.5 and forced exit at ±3 standard deviations if the move continues.
+Stop-loss: Forced exit at ±3 standard deviations from mean if the z-score continues moving.
 
-
-4.3 Daily P&L Calculation 
-
-Computes the profit and loss for all open positions based on price changes in CAML and GLEN.
+Also this is where we have the daily P&L calculation. We compute the profit and loss for all open positions based on price changes in CAML and GLEN.
 
 P&L per position:
 
@@ -192,7 +181,7 @@ Short trade PnL = no. of caml shares * hedging ratio * (glen original buy price 
 Long trade PnL = no. of caml shares * hedging ratio * (glen current buy price - glen original buy price) + no. of caml shares * (caml original buy price - caml current buy price)
 
 
-5. Sharpe Ratio
+5. Sharpe Ratio (utils.py)
 
 ```python
 def calculateSharpeRatio(daily_returns,risk_free_daily):
@@ -209,7 +198,7 @@ Sharpe Ratio = (return of portfolio - risk-free rate) / standard deviation of th
 
 Since we are trading stocks in the British markets, the risk-free rate used is the 3-month Treasury yield of 5.25%. This is divided by 252 to give the daily risk-free rate as we are trading daily and there are 252 trading days in a year. 
 
-```python
+```python (pairs_trading.py)
 import numpy as np
 
 def backtest_strategy(camlTestingDataDF,glenTestingDataDF, hedgingRatio):
@@ -227,7 +216,7 @@ def backtest_strategy(camlTestingDataDF,glenTestingDataDF, hedgingRatio):
 
         sumOfSpreads = sum([spread(camlTestingDataDF["Close"].iloc[y], glenTestingDataDF["Close"].iloc[y],hedgingRatio) for y in range(x-20,x)])
         meanSpread = sumOfSpreads/20
-        sdSpread = sqrt(sum([(meanSpread-spread(camlTestingDataDF["Close"].iloc[y], glenTestingDataDF["Close"].iloc[y],hedgingRatio))**2 for y in range(x-20,x)]) / 20)
+        sdSpread = np.sqrt(sum([(meanSpread-spread(camlTestingDataDF["Close"].iloc[y], glenTestingDataDF["Close"].iloc[y],hedgingRatio))**2 for y in range(x-20,x)]) / 20)
         currentSpread = spread(camlTestingDataDF["Close"].iloc[x], glenTestingDataDF["Close"].iloc[x],hedgingRatio)
 
         zScore = (currentSpread - meanSpread)/sdSpread
@@ -244,7 +233,7 @@ def backtest_strategy(camlTestingDataDF,glenTestingDataDF, hedgingRatio):
                 stake = bankroll * 0.01
                 caml_no_of_shares = stake/camlTestingDataDF["Close"].iloc[x]
 
-                new_position = {"date":glenTestingDataDF['Date'].iloc[x],"type":"short","caml_no_of_shares":caml_no_of_shares, "buy_price":glenTestingDataDF["Close"].iloc[x],"sell_price":camlTestingDataDF["Close"].iloc[x],"open":True,"stop_loss":False}
+                new_position = {"date":glenTestingDataDF['Date'].iloc[x],"type":"short","caml_no_of_shares":caml_no_of_shares, "buy_price":glenTestingDataDF["Close"].iloc[x],"sell_price":camlTestingDataDF["Close"].iloc[x],"open":True}
 
                 positions.append(new_position)
 
@@ -255,7 +244,7 @@ def backtest_strategy(camlTestingDataDF,glenTestingDataDF, hedgingRatio):
                 stake = bankroll * 0.01
                 caml_no_of_shares = stake/camlTestingDataDF["Close"].iloc[x]
 
-                new_position = {"date":glenTestingDataDF['Date'].iloc[x],"type":"long", "caml_no_of_shares":caml_no_of_shares, "buy_price":camlTestingDataDF["Close"].iloc[x], "sell_price":glenTestingDataDF["Close"].iloc[x],"open":True,"stop_loss":False}
+                new_position = {"date":glenTestingDataDF['Date'].iloc[x],"type":"long", "caml_no_of_shares":caml_no_of_shares, "buy_price":camlTestingDataDF["Close"].iloc[x], "sell_price":glenTestingDataDF["Close"].iloc[x],"open":True}
 
                 positions.append(new_position)
 
@@ -324,7 +313,7 @@ z ≤ -2: Spread is narrower than expected → long CAML, short GLEN
 
 We use 1% of our current bankroll per trade.
 
-```python
+```python (main.py)
 noOfElements = len(glenDataDF["Close"])
 glenTestingDataDF = glenDataDF.iloc[int(0.6*noOfElements):]
 noOfElements = len(camlDataDF["Close"])
